@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function verified() { return request.auth.token.email_verified == true; }
+
+    // I dati di ognuno: li scrive solo il proprietario.
+    // Li legge il proprietario e chi ha ricevuto la condivisione (con email verificata).
+    match /users/{uid}/data/{doc} {
+      allow read: if signedIn() && (request.auth.uid == uid ||
+        (verified() && exists(/databases/$(database)/documents/shares/$(uid + '_' + myEmail()))));
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Condivisioni: shares/<proprietario>_<email amico>.
+    match /shares/{id} {
+      allow read: if signedIn() && (resource.data.owner == request.auth.uid ||
+        (verified() && resource.data.friendEmail == myEmail()));
+      allow create, update: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.friendEmail is string
+        && id == request.auth.uid + '_' + request.resource.data.friendEmail;
+      allow delete: if signedIn() && resource.data.owner == request.auth.uid;
+    }
+  }
+}
