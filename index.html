@@ -64,10 +64,9 @@ button{cursor:pointer;touch-action:manipulation}
 .wd{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .wd.today{color:var(--fg);font-weight:700}
 .disc{width:34px;height:34px;border-radius:50%;background:transparent;box-shadow:inset 0 0 0 2px var(--line);position:relative}
-.disc.d1,.disc.d2{box-shadow:none}
-.disc.d1{background:var(--red)}.disc.d2{background:var(--blue)}
-.disc.d1::after,.disc.d2::after{content:"";position:absolute;inset:12px;border-radius:50%;background:var(--bg)}
-.wd.today .disc:not(.d1):not(.d2){box-shadow:inset 0 0 0 2px var(--fg)}
+.disc.on{box-shadow:none;background:var(--accent)}
+.disc.on::after{content:"";position:absolute;inset:12px;border-radius:50%;background:var(--bg)}
+.wd.today .disc:not(.on){box-shadow:inset 0 0 0 2px var(--fg)}
 .hero{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
 .hero h2{font:800 76px/.86 var(--display);text-transform:uppercase;color:var(--accent)}
 .focus{font-size:18px;font-weight:700}
@@ -214,6 +213,24 @@ details summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .fl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .frow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .vb{display:flex;flex-direction:column;gap:8px;margin:-6px 0 18px;padding:12px 14px;border-radius:8px;background:var(--surface);box-shadow:inset 0 0 0 2px var(--blue)}
+.editor{display:flex;flex-direction:column;gap:16px;padding-top:0}
+.ed-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line)}
+.ed-day{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:10px;background:var(--surface);box-shadow:inset 4px 0 0 var(--accent)}
+.ed-dh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.ed-dh .tin{font-weight:700}
+.ed-ex{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.ed-er{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.ed-mv{display:flex}.ed-mv .mini{min-width:40px;padding:0 6px;color:var(--muted)}.ed-mv .mini:disabled{opacity:.3}
+.ed-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.es{display:flex;flex-direction:column;gap:4px}
+.es .eyebrow{font-size:11px}
+.es select{min-height:44px;font-size:16px}
+.stp.sm{height:44px;grid-template-columns:40px minmax(0,1fr) 40px}
+.stp.sm output{display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700}
+.pl-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.pl-row .mini{box-shadow:inset 0 0 0 2px var(--line);min-height:52px}
+.opt.pk{min-height:46px}
+.opt.pk[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:inset 0 0 0 2px var(--green)}
 .tools{display:flex;flex-wrap:wrap;gap:8px}
 .opts{display:flex;flex-direction:column;gap:8px}
 .opt{min-height:52px;padding:8px 14px;border:0;border-radius:8px;box-shadow:inset 0 0 0 2px var(--line);background:transparent;font-weight:700;text-align:left}
@@ -482,7 +499,7 @@ function defOf(day,i,x){
   return {...slot,id:x.id,name:nameOf(x.id,x),step:a?a.step:BAR,variants:a?a.variants:null,perArm:a?!!a.perArm:false,perLeg:a?!!a.perLeg:false,note:null,subOf:slot.id,custom:!a};
 }
 const subFor=slot=>prefs.subs&&prefs.subs[slot.id];
-const restOf=(day,e)=>e.rest?{s:e.rest,label:e.restLabel}:{s:REST_DEFAULT[day].s,label:REST_DEFAULT[day].label};
+const restOf=(day,e)=>e.rest?{s:e.rest,label:e.restLabel}:REST_DEFAULT[day]?{s:REST_DEFAULT[day].s,label:REST_DEFAULT[day].label}:{s:90,label:'90 s'};
 const scheme=e=>`${e.sets}×${e.min===e.max?e.min:e.min+'-'+e.max}`;
 const varLabel=(e,v)=>e.variants?(e.variants.find(x=>x.id===v)||{}).label||'':'';
 const stepOf=(e,v)=>e.variants?((e.variants.find(x=>x.id===v)||{}).step||e.step):e.step;
@@ -506,6 +523,130 @@ function savePrefs(){prefs.updatedAt=Date.now();ls.set(K('prefs'),prefs);if(col)
 /* Un allenamento iniziato prima di un aggiornamento della scheda riceve gli esercizi nuovi in fondo. */
 function fitActive(){if(!active)return;const L=flat(active.day);active.exercises.forEach((x,i)=>{if(L[i])x.opt=!!L[i].opt});while(active.exercises.length<L.length){const e=L[active.exercises.length],v=lastVariant(e);active.exercises.push({id:e.id,opt:!!e.opt,variant:v,skipped:false,sets:makeSets(e,v)})}}
 let tombstones=ls.get(K('deleted'),[]);
+/* ===== Schede personalizzate =====
+   La scheda del coach resta fissa (giorni 1 e 2). Le schede create da te stanno nel documento "plans".
+   PLAN contiene i giorni di tutte le schede (anche quelle eliminate, per lo storico): ogni giorno ha una chiave unica. */
+const COACH={id:'coach',name:'Scheda Guerriero',coach:true,days:[1,2]};
+const COACH_DAYS={1:PLAN[1],2:PLAN[2]};
+let plans=Object.assign({list:[],active:'coach',updatedAt:0},ls.get('sg.plans',{}));
+let extraPlans=[]; /* schede di un amico mentre guardi i suoi dati */
+const CAT_OF={pec:'Petto',deltA:'Spalle',deltL:'Spalle',deltR:'Spalle',traps:'Spalle',biceps:'Braccia',triceps:'Braccia',forearm:'Braccia',lats:'Schiena',rhomb:'Schiena',lowback:'Schiena',quads:'Gambe',hams:'Gambe',glutes:'Gambe',calves:'Gambe',abs:'Addome',obliq:'Addome'};
+const CATS=['Petto','Spalle','Braccia','Schiena','Gambe','Addome','Altri'];
+const catOf=id=>GUIDE[id]&&GUIDE[id].p.length?CAT_OF[GUIDE[id].p[0]]||'Altri':'Altri';
+const DAY_COLORS=['var(--red)','var(--blue)','var(--green)','#8a4fd6','#d9752e'];
+function customEx(e){
+  const b=EX[e.id]||{step:BAR},rest=e.rest||90;
+  return {id:e.id,name:e.name||b.name||e.id,step:b.step||BAR,variants:b.variants||null,perArm:!!b.perArm,perLeg:!!b.perLeg,sets:e.sets||3,min:e.min||10,max:e.max||e.min||10,rest,restLabel:rest%60?rest+' s':(rest/60)+' min',note:null};
+}
+function rebuildPlan(){
+  for(const k of Object.keys(PLAN))if(!COACH_DAYS[k])delete PLAN[k];
+  let css='';
+  for(const p of plans.list.concat(extraPlans))p.days.concat(p.archived||[]).forEach((d,i)=>{
+    const ex=d.ex.map(customEx),groups=[];
+    for(const e of ex){const c=catOf(e.id);if(!groups.length||groups[groups.length-1].name!==c)groups.push({name:c,ex:[]});groups[groups.length-1].ex.push(e)}
+    PLAN[d.key]={name:d.name||'Giorno '+(i+1),focus:d.focus||[...new Set(groups.map(g=>g.name))].join(', '),groups,plan:p.id,custom:true};
+    css+=`[data-day="${d.key}"]{--accent:${DAY_COLORS[i%DAY_COLORS.length]}}`;
+  });
+  let st=document.getElementById('plan-css');if(!st){st=document.createElement('style');st.id='plan-css';document.head.appendChild(st)}st.textContent=css;
+}
+const livePlans=()=>[COACH].concat(plans.list.filter(p=>!p.deleted));
+const planById=id=>id==='coach'?COACH:plans.list.find(p=>p.id===id&&!p.deleted);
+const activePlan=()=>planById(plans.active)||COACH;
+const planDays=p=>p.coach?[1,2]:p.days.map(d=>d.key);
+const dayName=k=>PLAN[k]?PLAN[k].name:'Allenamento';
+function savePlans(){plans.updatedAt=Date.now();ls.set('sg.plans',plans);rebuildPlan();if(col)col.doc(D('plans')).set(clone(plans)).catch(()=>setSync('err'))}
+const newKey=()=>'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* --- Editor --- */
+let edit=null;
+function startEdit(p){
+  edit=p?clone(p):{id:'pl'+Date.now().toString(36),name:'',days:[{key:newKey(),name:'Giorno A',ex:[]}],isNew:true};
+  view='editor';sheet=null;render();window.scrollTo(0,0);
+}
+function copyCoach(){
+  const p={id:'pl'+Date.now().toString(36),name:'La mia scheda',days:[1,2].map(k=>({key:newKey(),name:PLAN[k].name,focus:PLAN[k].focus,ex:flat(k).map(e=>({id:e.id,name:e.name,sets:e.sets,min:e.min,max:e.max,rest:e.rest||90}))})),isNew:true};
+  edit=p;view='editor';sheet=null;render();window.scrollTo(0,0);
+}
+const REST_OPTS=[45,60,90,120,150,180];
+function stepper(i,j,f,val,label){return `<div class="es"><span class="eyebrow">${label}</span><div class="stp sm"><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="-1" aria-label="Meno ${label}">−</button><output>${val}</output><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="1" aria-label="Più ${label}">+</button></div></div>`}
+function viewEditor(){
+  const p=edit;
+  const days=p.days.map((d,i)=>`<section class="ed-day" style="--accent:${DAY_COLORS[i%DAY_COLORS.length]}"><div class="ed-dh"><input class="tin" data-ed="dname" data-i="${i}" value="${esc(d.name||'')}" placeholder="Nome del giorno" aria-label="Nome del giorno ${i+1}">${p.days.length>1?`<button class="link" data-act="ed-del-day" data-i="${i}">Elimina</button>`:''}</div>
+    ${d.ex.length?d.ex.map((e,j)=>`<div class="ed-ex"><div class="ed-er"><b>${esc(e.name||nameOf(e.id))}</b><span class="ed-mv"><button class="mini" data-act="ed-mv" data-i="${i}" data-j="${j}" data-d="-1" aria-label="Sposta su" ${j?'':'disabled'}>↑</button><button class="mini" data-act="ed-mv" data-i="${i}" data-j="${j}" data-d="1" aria-label="Sposta giù" ${j<d.ex.length-1?'':'disabled'}>↓</button><button class="mini" data-act="ed-del-ex" data-i="${i}" data-j="${j}" aria-label="Togli ${esc(e.name||'')}">✕</button></span></div>
+      <div class="ed-grid">${stepper(i,j,'sets',e.sets,'Serie')}${stepper(i,j,'min',e.min,'Rip min')}${stepper(i,j,'max',e.max,'Rip max')}<label class="es"><span class="eyebrow">Recupero</span><select data-ed="rest" data-i="${i}" data-j="${j}">${REST_OPTS.map(r=>`<option value="${r}" ${r===(e.rest||90)?'selected':''}>${r%60?r+' s':r/60+' min'}</option>`).join('')}</select></label></div></div>`).join(''):'<p class="muted">Ancora nessun esercizio.</p>'}
+    <button class="how" data-act="ed-pick" data-i="${i}">+ Aggiungi esercizi</button></section>`).join('');
+  return `<div class="wrap editor"><header class="wh-row ed-top"><button class="mini" data-act="ed-cancel">‹ Annulla</button><span class="wh-title" style="color:var(--fg)">${p.isNew?'Nuova scheda':'Modifica scheda'}</span><button class="mini end" data-act="ed-save">Salva</button></header>
+  <label class="field"><span class="eyebrow">Nome della scheda</span><input class="tin" data-ed="pname" value="${esc(p.name||'')}" placeholder="Es. Scheda invernale"></label>
+  ${days}<button class="btn ghost" data-act="ed-add-day">+ Aggiungi un giorno</button>
+  <p class="muted" id="ed-msg" role="status"></p>
+  ${p.isNew?'':'<button class="link" data-act="ed-del-plan" style="color:var(--red)">Elimina questa scheda</button>'}</div>`;
+}
+/* scelta esercizi: tutto il catalogo, raggruppato per muscolo */
+function catalog(){
+  const seen=new Set(),out=[];
+  for(const id of Object.keys(EX)){if(seen.has(id))continue;seen.add(id);out.push({id,name:EX[id].name,cat:catOf(id)})}
+  for(const [id,c] of Object.entries(prefs.custom||{}))if(!seen.has(id)){seen.add(id);out.push({id,name:c.name,cat:'Altri'})}
+  return out.sort((a,b)=>a.name.localeCompare(b.name,'it'));
+}
+function pickList(q){
+  const day=edit.days[sheet.pick],inDay=new Set(day.ex.map(e=>e.id)),qq=q.trim().toLowerCase();
+  const items=catalog().filter(x=>!qq||x.name.toLowerCase().includes(qq));
+  return CATS.map(c=>{const l=items.filter(x=>x.cat===c);return l.length?`<p class="eyebrow group">${c}</p>`+l.map(x=>`<button class="opt pk" data-act="ed-add-ex" data-id="${x.id}" data-name="${esc(x.name)}" aria-pressed="${inDay.has(x.id)}">${inDay.has(x.id)?'✓ ':'+ '}${esc(x.name)}</button>`).join(''):''}).join('')||'<p class="muted">Nessun esercizio trovato. Aggiungilo col nome qui sopra.</p>';
+}
+function pickHtml(){
+  const d=edit.days[sheet.pick];
+  return `<div class="sh pick" role="dialog" aria-modal="true" aria-label="Aggiungi esercizi"><p class="eyebrow">${esc(d.name||'Giorno')}</p><h2>Aggiungi esercizi</h2>
+  <div class="cust"><input id="pk-q" type="search" placeholder="Cerca o scrivi un nome nuovo" autocomplete="off" aria-label="Cerca esercizio"><button class="mini end" data-act="ed-add-new">Nuovo</button></div>
+  <div class="opts" id="pk-list">${pickList('')}</div>
+  <button class="btn" data-act="sheet-close">Fatto · ${d.ex.length} esercizi</button></div>`;
+}
+function plansHtml(){
+  const a=activePlan().id;
+  return `<div class="sh" role="dialog" aria-modal="true" aria-label="Schede"><p class="eyebrow">Schede</p><h2>Quale scheda segui?</h2>
+  <div class="opts">${livePlans().map(p=>`<div class="pl-row"><button class="opt" role="radio" aria-checked="${p.id===a}" aria-pressed="${p.id===a}" data-act="plan-pick" data-id="${p.id}">${esc(p.name)} <span class="tag">${p.coach?'del coach · 2 giorni':p.days.length+(p.days.length===1?' giorno':' giorni')}</span></button>${p.coach?`<button class="mini" data-act="plan-copy" aria-label="Copia e modifica la scheda del coach">Copia</button>`:`<button class="mini" data-act="plan-edit" data-id="${p.id}">Modifica</button>`}</div>`).join('')}</div>
+  <button class="btn" data-act="plan-new">+ Crea una nuova scheda</button>
+  <p class="muted" style="font-size:14px">Gli esercizi sono gli stessi in tutte le schede: pesi, record e grafici continuano da una scheda all'altra.</p>
+  <button class="btn ghost" data-act="sheet-close">Chiudi</button></div>`;
+}
+const PLAN_ACT={
+  'plans-open'(){sheet={plans:true};renderSheet()},
+  'plan-pick'(t){plans.active=t.dataset.id;savePlans();sheet=null;render()},
+  'plan-new'(){startEdit(null)},
+  'plan-copy'(){copyCoach()},
+  'plan-edit'(t){const p=planById(t.dataset.id);if(p)startEdit(p)},
+  'ed-cancel'(){edit=null;view='home';render();window.scrollTo(0,0)},
+  'ed-add-day'(){edit.days.push({key:newKey(),name:'Giorno '+'ABCDEFGHIJ'[edit.days.length%10],ex:[]});render()},
+  'ed-del-day'(t){const i=+t.dataset.i;if(edit.days[i].ex.length&&!confirm('Eliminare «'+(edit.days[i].name||'questo giorno')+'» e i suoi esercizi?'))return;edit.days.splice(i,1);render()},
+  'ed-del-ex'(t){edit.days[+t.dataset.i].ex.splice(+t.dataset.j,1);render()},
+  'ed-mv'(t){const l=edit.days[+t.dataset.i].ex,j=+t.dataset.j,k=j+(+t.dataset.d);if(k<0||k>=l.length)return;[l[j],l[k]]=[l[k],l[j]];render()},
+  'ed-step'(t){const e=edit.days[+t.dataset.i].ex[+t.dataset.j],f=t.dataset.f,d=+t.dataset.d;
+    e[f]=Math.max(1,Math.min(f==='sets'?10:50,(e[f]||1)+d));if(f==='min'&&e.max<e.min)e.max=e.min;if(f==='max'&&e.min>e.max)e.min=e.max;render()},
+  'ed-pick'(t){sheet={pick:+t.dataset.i};renderSheet();const q=document.getElementById('pk-q');if(q)q.focus({preventScroll:true})},
+  'ed-add-ex'(t){const d=edit.days[sheet.pick],id=t.dataset.id,i=d.ex.findIndex(e=>e.id===id);
+    if(i>=0)d.ex.splice(i,1);else{const b=EX[id],slot=b&&b.sets&&!b.of?b:null;d.ex.push({id,name:t.dataset.name,sets:slot?slot.sets:3,min:slot?slot.min:10,max:slot?slot.max:10,rest:(b&&b.rest)||(['legpress','rdl','squat','hack','squat-smith','good-morning'].includes(id)?120:90)})}
+    refreshPick()},
+  'ed-add-new'(){const q=document.getElementById('pk-q'),n=(q.value||'').trim().replace(/\s+/g,' ');if(!n){q.focus();return}
+    const known=catalog().find(x=>x.name.toLowerCase()===n.toLowerCase()),id=known?known.id:slug(n);
+    if(!known){prefs.custom=prefs.custom||{};prefs.custom[id]={name:n,slot:null};savePrefs()}
+    const d=edit.days[sheet.pick];if(!d.ex.some(e=>e.id===id))d.ex.push({id,name:known?known.name:n,sets:3,min:10,max:10,rest:90});q.value='';refreshPick()},
+  'ed-save'(){
+    const p=edit,m=document.getElementById('ed-msg');
+    p.name=(p.name||'').trim();
+    if(!p.name){m.textContent='Dai un nome alla scheda.';document.querySelector('[data-ed=pname]').focus();return}
+    p.days=p.days.filter(d=>d.ex.length);
+    if(!p.days.length){m.textContent='Aggiungi almeno un esercizio.';render();return}
+    const wasNew=p.isNew;delete p.isNew;
+    const i=plans.list.findIndex(x=>x.id===p.id);
+    if(i>=0){const old=plans.list[i];const keep=old.days.filter(d=>!p.days.some(n=>n.key===d.key));p.archived=(old.archived||[]).concat(keep)} /* giorni tolti: restano per lo storico */
+    if(i>=0)plans.list[i]=p;else plans.list.push(p);
+    if(wasNew)plans.active=p.id;
+    savePlans();edit=null;view='home';render();window.scrollTo(0,0)},
+  'ed-del-plan'(){if(!confirm('Eliminare la scheda «'+(edit.name||'')+'»? Gli allenamenti già fatti restano nello storico.'))return;
+    const p=plans.list.find(x=>x.id===edit.id);if(p)p.deleted=true;if(plans.active===edit.id)plans.active='coach';savePlans();edit=null;view='home';render();window.scrollTo(0,0)}
+};
+function refreshPick(){const l=document.getElementById('pk-list'),q=document.getElementById('pk-q');if(l)l.innerHTML=pickList(q?q.value:'');const b=sheetEl.querySelector('.pick>.btn');if(b)b.textContent='Fatto · '+edit.days[sheet.pick].ex.length+' esercizi'}
+rebuildPlan();
+
 let sound=ls.get('sg.sound',true);
 let menuOpen=null;
 let view='home', sheet=null, summary=null, openHist=null, delAsk=null, progKey=null, scrollTo=null;
@@ -557,6 +698,9 @@ function onDocs(snap){
   const pr=docs.find(d=>d.id==='prefs');
   if(pr&&pr.data&&(pr.data.updatedAt||0)>(prefs.updatedAt||0)){prefs=Object.assign({subs:{},custom:{}},clone(pr.data));ls.set(K('prefs'),prefs)}
   else if(fromServer&&prefs.updatedAt&&(!pr||(pr.data.updatedAt||0)<prefs.updatedAt))col.doc(D('prefs')).set(clone(prefs)).catch(()=>{});
+  const pd=docs.find(d=>d.id==='plans');
+  if(pd&&pd.data&&(pd.data.updatedAt||0)>(plans.updatedAt||0)){plans=Object.assign({list:[],active:'coach'},clone(pd.data));ls.set('sg.plans',plans);rebuildPlan()}
+  else if(fromServer&&plans.updatedAt&&(!pd||(pd.data.updatedAt||0)<plans.updatedAt))col.doc(D('plans')).set(clone(plans)).catch(()=>{});
   const a=docs.find(d=>d.id==='active');
   if(a&&a.data&&a.data.id){
     if(sessions.some(s=>s.id===a.data.id)){if(!active||active.id!==a.data.id)col.doc(D('active')).delete().catch(()=>{})}
@@ -584,6 +728,7 @@ function clearLocalData(){
   try{Object.keys(localStorage).filter(k=>k.startsWith('sg.')&&k!=='sg.sound').forEach(k=>localStorage.removeItem(k))}catch(e){}
   profiles={list:[{id:'main',name:'Io'}],updatedAt:0};profile='main';
   sessions=[];active=null;tombstones=[];prefs={subs:{},custom:{},updatedAt:0};ended=new Set();progKey=null;
+  plans={list:[],active:'coach',updatedAt:0};rebuildPlan();
 }
 function connect(){
   if(!window.firebase){authKnown=true;if(!ls.get('sg.skip',false)&&!ls.get('sg.uid',null)){view='login';render()}return Promise.resolve()}
@@ -666,6 +811,7 @@ async function viewFriend(uid,name){
     const snap=await fdb.collection('users').doc(uid).collection('data').get();
     if(!viewing||viewing.uid!==uid)return;
     viewing.docs=snap.docs.map(d=>({id:d.id,data:d.data()}));
+    const fpl=viewing.docs.find(d=>d.id==='plans');extraPlans=fpl&&fpl.data&&Array.isArray(fpl.data.list)?fpl.data.list.filter(p=>!plans.list.some(q=>q.id===p.id)):[];rebuildPlan();
     const pf=viewing.docs.find(d=>d.id==='profiles');
     if(pf&&pf.data&&pf.data.list&&pf.data.list.length>1)viewing.profiles=pf.data.list.map(p=>p.id==='main'?{id:'main',name:pf.data.list.length>1?p.name:name}:p);
     pickFriendProfile('main');
@@ -689,6 +835,7 @@ async function importBackup(file){
   const say=t=>{const m=document.getElementById('exp-msg');if(m)m.textContent=t};
   let data;try{data=JSON.parse(await file.text())}catch(e){say('Il file non è un backup valido.');return}
   if(!data||data.app!=='scheda-guerriero'||!Array.isArray(data.profiles)){say('Il file non è un backup di Scheda Guerriero.');return}
+  if(data.plans&&Array.isArray(data.plans.list)){let add=0;for(const q of data.plans.list)if(q&&q.id&&Array.isArray(q.days)&&!plans.list.some(x=>x.id===q.id)){plans.list.push(clone(q));add++}if(add)savePlans()}
   const withData=data.profiles.filter(p=>p&&Array.isArray(p.sessions)&&p.sessions.length);
   if(!withData.length){say('Il backup non contiene allenamenti.');return}
   if(withData.length===1){doImport(withData[0]);return}
@@ -728,7 +875,7 @@ const lastEntry=(id,v)=>entries(id,v).pop()||null;
 const lastVariant=e=>{if(!e.variants)return null;let best=null;for(const s of sessions)for(const x of s.exercises)if(x.id===e.id&&(!best||s.startedAt>best.t))best={t:s.startedAt,v:x.variant};return best&&e.variants.some(o=>o.id===best.v)?best.v:e.variants[0].id};
 const topKg=sets=>Math.max(...sets.map(r=>r.kg||0));
 const setsText=sets=>sets.map(r=>`${r.kg==null?'–':fmt(r.kg)+' kg'} × ${r.reps??'–'}`).join(', ');
-function nextDay(){const l=sessions.slice().sort(byDate).pop();return l?(l.day===1?2:1):1}
+function nextDay(){const ks=planDays(activePlan()),ss=ks.map(String),l=sessions.filter(s=>ss.includes(String(s.day))).sort(byDate).pop();if(!l)return ks[0];return ks[(ss.indexOf(String(l.day))+1)%ks.length]}
 function lastOfDay(d){const l=sessions.filter(s=>s.day===d).sort(byDate).pop();return l||null}
 function makeSets(e,v){const l=lastEntry(e.id,v);return Array.from({length:e.sets},(_,i)=>{const p=l?(l.sets[i]||l.sets[l.sets.length-1]):null;return{kg:p?p.kg:null,reps:p&&p.reps!=null?p.reps:e.min,done:false}})}
 function suggestion(e,v){
@@ -783,12 +930,12 @@ function planList(d){return `<ul class="plan">${PLAN[d].groups.map(g=>`<li class
 function viewHome(){
   const now=Date.now(),t=new Date();const mon=new Date(t);mon.setHours(0,0,0,0);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
   const week=Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(d.getDate()+i);const s=sessions.filter(x=>dayKey(x.startedAt)===dayKey(d)).pop();
-    return `<div class="wd ${dayKey(d)===dayKey(now)?'today':''}"><span class="disc ${s?'d'+s.day:''}"></span><span>${'LMMGVSD'[i]}</span></div>`}).join('');
-  const nx=nextDay(),ot=nx===1?2:1,lo=lastOfDay(nx);
+    return `<div class="wd ${dayKey(d)===dayKey(now)?'today':''}"><span class="disc ${s?'on':''}" ${s?`data-day="${s.day}"`:''}></span><span>${'LMMGVSD'[i]}</span></div>`}).join('');
+  const ap=activePlan(),nx=nextDay(),others=planDays(ap).filter(k=>String(k)!==String(nx)),lo=lastOfDay(nx);
   const res=active?`<section class="resume" data-day="${active.day}"><p class="eyebrow">Allenamento in corso</p><h2>${PLAN[active.day].name}</h2>${barHtml(active.exercises.filter(exDone).length)}<button class="btn" data-act="resume">Riprendi</button></section>`:'';
   const hero=active?'':`<section class="hero" data-day="${nx}"><div><p class="eyebrow">${sessions.length?'Oggi tocca a':'Si parte da'}</p></div><h2>${PLAN[nx].name}</h2><p class="focus">${PLAN[nx].focus}</p>${lo?`<p class="muted">Ultima volta ${relDays(lo.startedAt)}</p>`:''}<button class="btn" data-act="start" data-day="${nx}">Inizia allenamento</button>${planList(nx)}</section>
-  <section class="other" data-day="${ot}"><h3>${PLAN[ot].name}</h3><p>${PLAN[ot].focus}</p><details><summary>Vedi gli esercizi</summary>${planList(ot)}</details><button class="btn ghost" data-act="start" data-day="${ot}">Fai questo invece</button></section>`;
-  return `<div class="wrap"><header class="top"><h1 class="brand">Scheda Guerriero</h1><span class="date">${longDate(now)}</span></header><div class="week" aria-label="Allenamenti di questa settimana">${week}</div>${res}${hero}<p class="sync" id="sync">${syncText()}</p></div>`;
+  ${others.map(ot=>`<section class="other" data-day="${ot}"><h3>${PLAN[ot].name}</h3><p>${PLAN[ot].focus}</p><details><summary>Vedi gli esercizi</summary>${planList(ot)}</details><button class="btn ghost" data-act="start" data-day="${ot}">Fai questo invece</button></section>`).join('')}`;
+  return `<div class="wrap"><header class="top"><h1 class="brand">Scheda Guerriero</h1><span class="date">${longDate(now)}</span></header><button class="chip" data-act="plans-open" aria-label="Scheda: ${esc(ap.name)}. Cambia o crea una scheda">${ICON.hist}<span>${esc(ap.name)}</span><span class="chev" aria-hidden="true">▾</span></button><div class="week" aria-label="Allenamenti di questa settimana">${week}</div>${res}${hero}<p class="sync" id="sync">${syncText()}</p></div>`;
 }
 function setRow(e,s,i){
   return `<div class="sr ${s.done?'ok':''}"><span class="n">${i+1}</span>
@@ -819,10 +966,10 @@ function viewWorkout(){
 }
 function viewHist(){
   const list=DS().slice().sort((a,b)=>b.startedAt-a.startedAt);
-  const body=list.length?list.map(s=>{const open=openHist===s.id;return `<article class="hi" data-day="${s.day}"><button class="hi-h" data-act="hist" data-id="${s.id}" aria-expanded="${open}"><span class="hi-d">${longDate(s.startedAt)}</span><span class="hi-t">${PLAN[s.day].name}</span><span class="hi-m">${mins(s.endedAt-s.startedAt)} min · ${setsOf(s)} serie · ${num(volOf(s))} kg sollevati</span></button>${open?`<div class="hi-b">${s.exercises.map(x=>{const e=EX[x.id];return `<p class="hl"><b>${nameOf(x.id,x)}${e&&x.variant?' · '+varLabel(e,x.variant):''}</b><span>${setsText(x.sets)}</span></p>`}).join('')}${viewing?'':delAsk===s.id?`<button class="btn danger" data-act="del-yes" data-id="${s.id}">Conferma: elimina per sempre</button><button class="link" data-act="del-no">Annulla</button>`:`<div><button class="link" data-act="del" data-id="${s.id}">Elimina questo allenamento</button></div>`}</div>`:''}</article>`}).join(''):`<div class="empty"><b>Nessun allenamento salvato.</b><p class="muted">Quando salvi un allenamento lo trovi qui, con pesi e ripetizioni di ogni serie.</p></div>`;
+  const body=list.length?list.map(s=>{const open=openHist===s.id;return `<article class="hi" data-day="${s.day}"><button class="hi-h" data-act="hist" data-id="${s.id}" aria-expanded="${open}"><span class="hi-d">${longDate(s.startedAt)}</span><span class="hi-t">${dayName(s.day)}</span><span class="hi-m">${mins(s.endedAt-s.startedAt)} min · ${setsOf(s)} serie · ${num(volOf(s))} kg sollevati</span></button>${open?`<div class="hi-b">${s.exercises.map(x=>{const e=EX[x.id];return `<p class="hl"><b>${nameOf(x.id,x)}${e&&x.variant?' · '+varLabel(e,x.variant):''}</b><span>${setsText(x.sets)}</span></p>`}).join('')}${viewing?'':delAsk===s.id?`<button class="btn danger" data-act="del-yes" data-id="${s.id}">Conferma: elimina per sempre</button><button class="link" data-act="del-no">Annulla</button>`:`<div><button class="link" data-act="del" data-id="${s.id}">Elimina questo allenamento</button></div>`}</div>`:''}</article>`}).join(''):`<div class="empty"><b>Nessun allenamento salvato.</b><p class="muted">Quando salvi un allenamento lo trovi qui, con pesi e ripetizioni di ogni serie.</p></div>`;
   return `<div class="wrap"><h1 class="pt">Storico</h1>${viewing?viewBanner():''}${body}</div>`;
 }
-function progOptions(){return [1,2].map(d=>{
+function progOptions(){return [...new Set(livePlans().flatMap(planDays))].map(d=>{
   const opt=(id,v,label)=>{const k=keyOf(id,v);return `<option value="${k}" ${k===progKey?'selected':''}>${label}</option>`};
   const has=id=>DS().some(s=>s.exercises.some(x=>x.id===id));
   const custom=[...new Set(DS().filter(s=>s.day===d).flatMap(s=>s.exercises.map(x=>x.id)).filter(id=>!EX[id]))];
@@ -865,7 +1012,7 @@ function drawChart(){
 }
 function viewSummary(){
   const s=summary;
-  return `<div class="wrap" data-day="${s.day}"><div class="sum"><p class="eyebrow">${PLAN[s.day].name} salvato</p><h1>Fatto, guerriero</h1>${barHtml(s.full??s.exercises.length)}
+  return `<div class="wrap" data-day="${s.day}"><div class="sum"><p class="eyebrow">${dayName(s.day)} salvato</p><h1>Fatto, guerriero</h1>${barHtml(s.full??s.exercises.length)}
   <div class="stats"><div class="st"><b>${mins(s.endedAt-s.startedAt)}</b><span>Minuti</span></div><div class="st"><b>${setsOf(s)}</b><span>Serie</span></div><div class="st"><b>${num(volOf(s))}</b><span>Kg sollevati</span></div></div>
   ${s.prs.length?`<div><p class="eyebrow group">Nuovi record</p><ul class="pr">${s.prs.map(p=>`<li><span>${p.name}</span><span>${fmt(p.kg)} kg</span></li>`).join('')}</ul></div>`:''}
   ${s.exercises.some(x=>x.id==='rdl')?'<p class="note">Hai fatto lo stacco rumeno. Non ci credeva nessuno.</p>':''}
@@ -883,6 +1030,8 @@ function guideHtml(id,v,name){
 }
 function renderSheet(){
   if(!sheet){sheetEl.hidden=true;sheetEl.innerHTML='';return}
+  if(typeof sheet==='object'&&sheet.plans){sheetEl.hidden=false;sheetEl.innerHTML=plansHtml();return}
+  if(typeof sheet==='object'&&sheet.pick!=null){if(!edit){sheet=null;sheetEl.hidden=true;return}sheetEl.hidden=false;sheetEl.innerHTML=pickHtml();return}
   if(typeof sheet==='object'&&sheet.imp){sheetEl.hidden=false;sheetEl.innerHTML=impHtml();return}
   if(typeof sheet==='object'&&sheet.prof){sheetEl.hidden=false;sheetEl.innerHTML=profHtml();return}
   if(typeof sheet==='object'&&sheet.guide){sheetEl.hidden=false;sheetEl.innerHTML=guideHtml(sheet.guide,sheet.v,sheet.name);return}
@@ -892,7 +1041,7 @@ function renderSheet(){
   :`<div class="sh" role="dialog" aria-modal="true"><h2>Buttare via?</h2><p>Perdi le ${done} serie spuntate oggi. Non si può annullare.</p><button class="btn danger" data-act="discard">Sì, butta via</button><button class="btn ghost" data-act="sheet-close">No, torna indietro</button></div>`;
 }
 function renderNav(){
-  const on=view!=='workout'&&view!=='summary'&&view!=='login';navEl.hidden=!on;if(!on)return;
+  const on=view!=='workout'&&view!=='summary'&&view!=='login'&&view!=='editor';navEl.hidden=!on;if(!on)return;
   const it=viewing?[['exit','I miei dati',ICON.back],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog]]:[['home','Allena',ICON.train],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog],['friends','Amici',ICON.friends]];
   navEl.style.gridTemplateColumns='repeat('+it.length+',1fr)';
   navEl.innerHTML=it.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" ${view===k?'aria-current="page"':''}>${i}<span>${l}</span></button>`).join('');
@@ -900,7 +1049,8 @@ function renderNav(){
 function render(){
   if(view==='workout'&&!active)view='home';
   if(viewing&&view!=='hist'&&view!=='prog')viewing=null;
-  const v={home:viewHome,workout:viewWorkout,hist:viewHist,prog:viewProg,summary:viewSummary,friends:viewFriends,login:viewLogin}[view]||viewHome;
+  if(!viewing&&extraPlans.length){extraPlans=[];rebuildPlan()}
+  const v={home:viewHome,workout:viewWorkout,hist:viewHist,prog:viewProg,summary:viewSummary,friends:viewFriends,login:viewLogin,editor:viewEditor}[view]||viewHome;
   app.innerHTML=v();
   if(view==='prog')drawChart();
   renderNav();renderSheet();renderRest();
@@ -1015,6 +1165,7 @@ function buildBackup(){
     const list=[...map.values()].map(x=>{const c=clone(x);delete c._pending;return c}).sort(byDate);
     out.profiles.push({id:p.id,name:p.name,sessions:list,prefs:pr});
   }
+  out.plans=clone(plans);
   return out;
 }
 const ACT={
@@ -1054,9 +1205,9 @@ const ACT={
   'prof-ren-ok'(){const n=document.getElementById('prof-name').value.trim().replace(/\s+/g,' ');if(!n)return;const p=profiles.list.find(p=>p.id===profile);if(p){p.name=n;saveProfiles()}sheet=null;render()},
   vmenu(){menuOpen=menuOpen===active.open?null:active.open;render()},
   vpick(t){pickOpt(t.dataset.id,t.dataset.v||null,t.dataset.name)},
-  tab(t){if(t.dataset.v==='exit'){viewing=null;view='home'}else view=t.dataset.v;if(view==='friends')loadShares();summary=view==='summary'?summary:null;dropLock();render();window.scrollTo(0,0)},
+  tab(t){if(t.dataset.v==='exit'){viewing=null;view='home';extraPlans=[];rebuildPlan()}else view=t.dataset.v;if(view==='friends')loadShares();summary=view==='summary'?summary:null;dropLock();render();window.scrollTo(0,0)},
   start(t){
-    const d=+t.dataset.day;if(active)return;
+    const v=t.dataset.day,d=/^\d+$/.test(v)?+v:v;if(active||!PLAN[d])return;
     active={id:'s-'+Date.now(),day:d,startedAt:Date.now(),updatedAt:Date.now(),open:0,rest:null,exercises:flat(d).map((e,i)=>{const sb=subFor(e),x={id:sb?sb.id:e.id,opt:!!e.opt,skipped:false};if(sb&&!EX[sb.id])x.name=nameOf(sb.id,sb);const df=defOf(d,i,x);x.variant=lastVariant(df);x.sets=makeSets(df,x.variant);return x})};
     view='workout';saveActive();unlockAudio();render();wantLock();window.scrollTo(0,0)},
   resume(){view='workout';unlockAudio();render();wantLock();window.scrollTo(0,0)},
@@ -1084,7 +1235,7 @@ const ACT={
   sound(){sound=!sound;ls.set('sg.sound',sound);unlockAudio();renderRest()},
   'ask-finish'(){sheet='finish';renderSheet()},
   'ask-discard'(){sheet='discard';renderSheet()},
-  'sheet-close'(){sheet=null;renderSheet()},
+  'sheet-close'(){const re=sheet&&typeof sheet==='object'&&sheet.pick!=null;sheet=null;if(re)render();else renderSheet()},
   'sub-custom'(){const inp=document.getElementById('sub-name'),n=(inp.value||'').trim().replace(/\s+/g,' ');if(!n){inp.focus();return}
     const known=Object.values(EX).find(e=>e.name.toLowerCase()===n.toLowerCase());pickOpt(known?known.id:slug(n),null,known?known.name:n)},
   guide(t){sheet={guide:t.dataset.id,v:t.dataset.v||null,name:t.dataset.name};renderSheet();const b=sheetEl.querySelector('.sh');if(b)b.scrollTop=0},
@@ -1103,7 +1254,10 @@ const ACT={
   'del-no'(){delAsk=null;render()},
   'del-yes'(t){const id=t.dataset.id;sessions=sessions.filter(s=>s.id!==id);saveSessions();tombstones.push(id);ls.set(K('deleted'),tombstones);removeRemote(id);delAsk=null;openHist=null;render()}
 };
-document.addEventListener('click',ev=>{if(ev.target===sheetEl&&sheet&&typeof sheet==='object'){sheet=null;renderSheet();return}const t=ev.target.closest('[data-act]');if(!t)return;const f=ACT[t.dataset.act];if(f)f(t)});
+Object.assign(ACT,PLAN_ACT);
+document.addEventListener('input',ev=>{const t=ev.target;if(t.id==='pk-q'){refreshPick();return}if(!edit||!t.dataset||!t.dataset.ed)return;const f=t.dataset.ed;if(f==='pname')edit.name=t.value;else if(f==='dname')edit.days[+t.dataset.i].name=t.value;else if(f==='rest')edit.days[+t.dataset.i].ex[+t.dataset.j].rest=+t.value});
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.id==='pk-q'){ev.preventDefault();ACT['ed-add-new']()}});
+document.addEventListener('click',ev=>{if(ev.target===sheetEl&&sheet&&typeof sheet==='object'){ACT['sheet-close']();return}const t=ev.target.closest('[data-act]');if(!t)return;const f=ACT[t.dataset.act];if(f)f(t)});
 document.addEventListener('input',ev=>{const t=ev.target;if(!t.dataset||!t.dataset.f||!active)return;setVal(+t.dataset.i,t.dataset.f,parse(t.value))});
 document.addEventListener('change',ev=>{if(ev.target.id==='imp'&&ev.target.files&&ev.target.files[0]){importBackup(ev.target.files[0]);ev.target.value='';return}if(ev.target.id==='prog-ex'){progKey=ev.target.value;render()}});
 document.addEventListener('focusin',ev=>{if(ev.target.matches&&ev.target.matches('.stp input'))ev.target.select()});
