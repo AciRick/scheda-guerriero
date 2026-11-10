@@ -493,7 +493,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* Profili: ogni profilo ha i suoi allenamenti, il suo allenamento in corso e le sue varianti.
    Il primo profilo ("main") usa le chiavi di sempre, così i dati esistenti restano dove sono. */
 let profiles=Object.assign({list:[{id:'main',name:'Io'}],updatedAt:0},ls.get('sg.profiles',{}));
-let profile=ls.get('sg.profile','main');
+let profile='main'; /* un profilo per account: chi vuole i suoi dati entra col suo account */
 if(!profiles.list.some(p=>p.id===profile))profile='main';
 const K=n=>profile==='main'?'sg.'+n:'sg.'+profile+'.'+n;
 const D=id=>profile==='main'?id:profile+'~'+id;
@@ -645,7 +645,7 @@ function viewFriends(){
     <section><p class="eyebrow">Chi può vedere i tuoi dati</p><p class="muted" style="font-size:14px">Vede storico, grafici e crescita muscolare, solo in lettura. Non può modificare niente.</p>${mine}
     <div class="cust"><input id="sh-email" type="email" inputmode="email" autocapitalize="none" placeholder="Email del suo account" autocomplete="off"><button class="mini end" data-act="share">Condividi</button></div><p class="muted" id="sh-msg" role="status"></p></section>`;
   }
-  const bk=`<section><p class="eyebrow">Backup</p><div class="tools"><button class="how" data-act="export">Esporta backup</button><label class="how" style="cursor:pointer">Importa backup<input type="file" id="imp" accept=".json,application/json" hidden></label></div><p class="muted" id="exp-msg" role="status"></p></section>`;
+  const bk=`<section><p class="eyebrow">Backup</p><p class="muted" style="font-size:14px">Per portare qui gli allenamenti dell'app su Claude: lì tocca «Esporta backup di tutti i profili» in fondo alla home, poi qui «Importa backup» e scegli il file.</p><div class="tools"><button class="how" data-act="export">Esporta backup</button><label class="how" style="cursor:pointer">Importa backup<input type="file" id="imp" accept=".json,application/json" hidden></label></div><p class="muted" id="exp-msg" role="status"></p></section>`;
   return `<div class="wrap"><h1 class="pt">Amici</h1><div class="fp">${acc}${fr}${bk}</div></div>`;
 }
 async function viewFriend(uid,name){
@@ -673,29 +673,31 @@ function viewBanner(){
   const v=viewing;
   return `<div class="vb"><span>Stai guardando i dati di <b>${esc(v.profiles.find(p=>p.id===v.pid)?.name||v.name)}</b> · sola lettura</span>${v.profiles.length>1?`<div class="pills">${v.profiles.map(p=>`<button class="pill" data-act="friend-prof" data-id="${esc(p.id)}" aria-pressed="${p.id===v.pid}">${esc(p.name)}</button>`).join('')}</div>`:''}${v.loading?'<span class="muted">Carico…</span>':''}${v.err?`<span class="vnote">${esc(v.err)}</span>`:''}</div>`;
 }
+/* Importa un backup (anche quello esportato dall'app su Claude) nell'account con cui sei entrato.
+   Se il backup ha più profili, chiedo quale: gli altri li importa ognuno nel proprio account. */
 async function importBackup(file){
-  const msg=document.getElementById('exp-msg'),say=t=>{if(msg)msg.textContent=t};
+  const say=t=>{const m=document.getElementById('exp-msg');if(m)m.textContent=t};
   let data;try{data=JSON.parse(await file.text())}catch(e){say('Il file non è un backup valido.');return}
   if(!data||data.app!=='scheda-guerriero'||!Array.isArray(data.profiles)){say('Il file non è un backup di Scheda Guerriero.');return}
-  let n=0;
-  for(const bp of data.profiles){
-    const pid=bp.id==='main'?'main':String(bp.id||'p'+Date.now().toString(36));
-    if(!profiles.list.some(p=>p.id===pid))profiles.list.push({id:pid,name:bp.name||'Profilo'});
-    else if(pid==='main'&&bp.name&&profiles.list[0].name==='Io')profiles.list[0].name=bp.name;
-    const key=k=>pid==='main'?'sg.'+k:'sg.'+pid+'.'+k,docId=id=>pid==='main'?id:pid+'~'+id;
-    const cur=pid===profile;
-    const list=cur?sessions:ls.get(key('sessions'),[]);
-    const have=new Set(list.map(s=>s.id));
-    for(const s of bp.sessions||[]){if(!s||!s.id||have.has(s.id)||!Array.isArray(s.exercises))continue;
-      const c=clone(s);c._pending=true;list.push(c);have.add(c.id);n++;
-      if(col){const d=clone(s);delete d._pending;col.doc(docId(s.id)).set(d).then(()=>{c._pending=false;if(cur)saveSessions();else ls.set(key('sessions'),list)}).catch(()=>{})}}
-    list.sort(byDate);
-    if(cur){sessions=list;saveSessions()}else ls.set(key('sessions'),list);
-    const bpr=bp.prefs||{},lp=cur?prefs:ls.get(key('prefs'),{});
-    if((bpr.updatedAt||0)>(lp.updatedAt||0)){const np=Object.assign({subs:{},custom:{}},bpr);if(cur){prefs=np}ls.set(key('prefs'),np);if(col)col.doc(docId('prefs')).set(clone(np)).catch(()=>{})}
-  }
-  saveProfiles();render();
-  const m=document.getElementById('exp-msg');if(m)m.textContent=n?`Importati ${n} allenamenti.`:'Niente di nuovo da importare: questi allenamenti c\'erano già.';
+  const withData=data.profiles.filter(p=>p&&Array.isArray(p.sessions)&&p.sessions.length);
+  if(!withData.length){say('Il backup non contiene allenamenti.');return}
+  if(withData.length===1){doImport(withData[0]);return}
+  sheet={imp:withData};renderSheet();
+}
+function impHtml(){
+  return `<div class="sh" role="dialog" aria-modal="true" aria-label="Importa backup"><p class="eyebrow">Importa backup</p><h2>Di chi sono?</h2><p class="muted">Il backup contiene più profili. Scegli quello da mettere in questo account${me&&me.email?' ('+esc(me.email)+')':''}. Gli altri li importa ognuno nel suo account, con lo stesso file.</p>
+  <div class="opts">${sheet.imp.map((p,i)=>`<button class="opt" data-act="imp-pick" data-i="${i}">${esc(p.name||'Profilo')} <span class="tag">${p.sessions.length} allenamenti</span></button>`).join('')}</div>
+  <button class="btn ghost" data-act="sheet-close">Annulla</button></div>`;
+}
+function doImport(bp){
+  const have=new Set(sessions.map(s=>s.id));let n=0;
+  for(const s of bp.sessions){if(!s||!s.id||have.has(s.id)||!Array.isArray(s.exercises))continue;
+    const c=clone(s);c._pending=true;sessions.push(c);have.add(c.id);n++;pushSession(c)}
+  saveSessions();
+  const bpr=bp.prefs||{};
+  if(bpr.subs||bpr.custom){prefs=Object.assign({subs:{},custom:{}},prefs);prefs.subs=Object.assign({},bpr.subs||{},prefs.subs);prefs.custom=Object.assign({},bpr.custom||{},prefs.custom);savePrefs()}
+  sheet=null;render();
+  const m=document.getElementById('exp-msg');if(m)m.textContent=n?`Importati ${n} allenamenti di ${bp.name||'questo profilo'}.`:'Niente di nuovo da importare: questi allenamenti c\'erano già.';
 }
 
 /* Helpers */
@@ -776,7 +778,7 @@ function viewHome(){
   const res=active?`<section class="resume" data-day="${active.day}"><p class="eyebrow">Allenamento in corso</p><h2>${PLAN[active.day].name}</h2>${barHtml(active.exercises.filter(exDone).length)}<button class="btn" data-act="resume">Riprendi</button></section>`:'';
   const hero=active?'':`<section class="hero" data-day="${nx}"><div><p class="eyebrow">${sessions.length?'Oggi tocca a':'Si parte da'}</p></div><h2>${PLAN[nx].name}</h2><p class="focus">${PLAN[nx].focus}</p>${lo?`<p class="muted">Ultima volta ${relDays(lo.startedAt)}</p>`:''}<button class="btn" data-act="start" data-day="${nx}">Inizia allenamento</button>${planList(nx)}</section>
   <section class="other" data-day="${ot}"><h3>${PLAN[ot].name}</h3><p>${PLAN[ot].focus}</p><details><summary>Vedi gli esercizi</summary>${planList(ot)}</details><button class="btn ghost" data-act="start" data-day="${ot}">Fai questo invece</button></section>`;
-  return `<div class="wrap"><header class="top"><h1 class="brand">Scheda Guerriero</h1><span class="date">${longDate(now)}</span></header>${profChip()}<div class="week" aria-label="Allenamenti di questa settimana">${week}</div>${res}${hero}<p class="sync" id="sync">${syncText()}</p></div>`;
+  return `<div class="wrap"><header class="top"><h1 class="brand">Scheda Guerriero</h1><span class="date">${longDate(now)}</span></header><div class="week" aria-label="Allenamenti di questa settimana">${week}</div>${res}${hero}<p class="sync" id="sync">${syncText()}</p></div>`;
 }
 function setRow(e,s,i){
   return `<div class="sr ${s.done?'ok':''}"><span class="n">${i+1}</span>
@@ -808,7 +810,7 @@ function viewWorkout(){
 function viewHist(){
   const list=DS().slice().sort((a,b)=>b.startedAt-a.startedAt);
   const body=list.length?list.map(s=>{const open=openHist===s.id;return `<article class="hi" data-day="${s.day}"><button class="hi-h" data-act="hist" data-id="${s.id}" aria-expanded="${open}"><span class="hi-d">${longDate(s.startedAt)}</span><span class="hi-t">${PLAN[s.day].name}</span><span class="hi-m">${mins(s.endedAt-s.startedAt)} min · ${setsOf(s)} serie · ${num(volOf(s))} kg sollevati</span></button>${open?`<div class="hi-b">${s.exercises.map(x=>{const e=EX[x.id];return `<p class="hl"><b>${nameOf(x.id,x)}${e&&x.variant?' · '+varLabel(e,x.variant):''}</b><span>${setsText(x.sets)}</span></p>`}).join('')}${viewing?'':delAsk===s.id?`<button class="btn danger" data-act="del-yes" data-id="${s.id}">Conferma: elimina per sempre</button><button class="link" data-act="del-no">Annulla</button>`:`<div><button class="link" data-act="del" data-id="${s.id}">Elimina questo allenamento</button></div>`}</div>`:''}</article>`}).join(''):`<div class="empty"><b>Nessun allenamento salvato.</b><p class="muted">Quando salvi un allenamento lo trovi qui, con pesi e ripetizioni di ogni serie.</p></div>`;
-  return `<div class="wrap"><h1 class="pt">Storico</h1>${viewing?viewBanner():profChip()}${body}</div>`;
+  return `<div class="wrap"><h1 class="pt">Storico</h1>${viewing?viewBanner():''}${body}</div>`;
 }
 function progOptions(){return [1,2].map(d=>{
   const opt=(id,v,label)=>{const k=keyOf(id,v);return `<option value="${k}" ${k===progKey?'selected':''}>${label}</option>`};
@@ -827,7 +829,7 @@ function viewProg(){
     chart=`<div id="chart"></div>`;
     rows=`<p class="eyebrow group">Sessioni</p><ul class="pr">${pts.slice().reverse().slice(0,12).map(p=>`<li><span>${shortDate(p.t)}</span><span>${setsText(p.sets)}</span></li>`).join('')}</ul>`;
   }else rows=`<div class="empty"><b>Ancora nessun dato per ${e.name}.</b><p class="muted">Dopo il primo allenamento salvato con questo esercizio vedi qui il peso massimo, sessione dopo sessione.</p></div>`;
-  return `<div class="wrap"><h1 class="pt">Progressi</h1>${viewing?viewBanner():profChip()}${volHtml()}<p class="muted" style="margin:24px 0 16px">${DS().length} allenamenti in totale · ${totalM} questo mese</p><label class="field"><span class="eyebrow">Esercizio</span><select id="prog-ex" data-act-change="prog">${progOptions()}</select></label>${stats}${chart}${rows}</div>`;
+  return `<div class="wrap"><h1 class="pt">Progressi</h1>${viewing?viewBanner():''}${volHtml()}<p class="muted" style="margin:24px 0 16px">${DS().length} allenamenti in totale · ${totalM} questo mese</p><label class="field"><span class="eyebrow">Esercizio</span><select id="prog-ex" data-act-change="prog">${progOptions()}</select></label>${stats}${chart}${rows}</div>`;
 }
 function drawChart(){
   const box=document.getElementById('chart');if(!box)return;
@@ -871,6 +873,7 @@ function guideHtml(id,v,name){
 }
 function renderSheet(){
   if(!sheet){sheetEl.hidden=true;sheetEl.innerHTML='';return}
+  if(typeof sheet==='object'&&sheet.imp){sheetEl.hidden=false;sheetEl.innerHTML=impHtml();return}
   if(typeof sheet==='object'&&sheet.prof){sheetEl.hidden=false;sheetEl.innerHTML=profHtml();return}
   if(typeof sheet==='object'&&sheet.guide){sheetEl.hidden=false;sheetEl.innerHTML=guideHtml(sheet.guide,sheet.v,sheet.name);return}
   const a=active,done=a.exercises.flatMap(x=>x.sets).filter(s=>s.done).length,missing=a.exercises.filter(counted).flatMap(x=>x.sets).filter(s=>!s.done).length;
@@ -1020,6 +1023,7 @@ const ACT={
     catch(x){m.textContent=x&&x.code==='permission-denied'?'Il database non è ancora configurato: mancano le regole di sicurezza.':'Non riuscito: serve la connessione.'}},
   async unshare(t){try{await fdb.collection('shares').doc(me.uid+'_'+t.dataset.email).delete();loadShares()}catch(e){alert('Non riuscito: serve la connessione.')}},
   'view-friend'(t){viewFriend(t.dataset.uid,t.dataset.name)},
+  'imp-pick'(t){doImport(sheet.imp[+t.dataset.i])},
   'friend-prof'(t){pickFriendProfile(t.dataset.id)},
   async export(){
     const msg=document.getElementById('exp-msg'),say=t=>{if(msg)msg.textContent=t};
