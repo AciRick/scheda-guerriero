@@ -631,6 +631,14 @@ function viewLogin(){
   <p class="muted" role="status" id="li-msg">${esc(loginMsg)}</p>
   <button class="link" data-act="skip-login">Continua senza account: i dati restano solo su questo telefono</button></div>`;
 }
+/* Allenamenti rimasti in un vecchio profilo (prima che i profili venissero tolti): si possono spostare nel profilo principale. */
+function strayProfiles(){
+  const out={};
+  const add=(pid,s)=>{if(!s||!s.id||sessions.some(x=>x.id===s.id))return;(out[pid]=out[pid]||new Map()).set(s.id,s)};
+  if(lastSnap)for(const d of lastSnap.docs){const i=d.id.indexOf('~');if(i<0)continue;const pid=d.id.slice(0,i),r=d.id.slice(i+1);if(r.startsWith('s-'))add(pid,d.data())}
+  try{for(const k of Object.keys(localStorage)){const m=k.match(/^sg\.(p[a-z0-9]+)\.sessions$/);if(m)for(const s of ls.get(k,[]))add(m[1],s)}}catch(e){}
+  return Object.entries(out).map(([pid,map])=>({pid,name:profName(pid),list:[...map.values()]})).filter(x=>x.list.length);
+}
 function viewFriends(){
   const acc=me?`<section class="acc"><p class="eyebrow">Il tuo account</p><p><b>${esc(me.displayName||me.email||'Account')}</b>${me.email&&me.displayName?`<br><span class="muted">${esc(me.email)}</span>`:''}</p>
     ${me.email&&!me.emailVerified?`<p class="vnote">Email non verificata: chi condivide con te non può ancora vedere i suoi dati qui. <button class="link" data-act="verify">Mandami il link di verifica</button></p>`:''}
@@ -646,7 +654,9 @@ function viewFriends(){
     <div class="cust"><input id="sh-email" type="email" inputmode="email" autocapitalize="none" placeholder="Email del suo account" autocomplete="off"><button class="mini end" data-act="share">Condividi</button></div><p class="muted" id="sh-msg" role="status"></p></section>`;
   }
   const bk=`<section><p class="eyebrow">Backup</p><p class="muted" style="font-size:14px">Per portare qui gli allenamenti dell'app su Claude: lì tocca «Esporta backup di tutti i profili» in fondo alla home, poi qui «Importa backup» e scegli il file.</p><div class="tools"><button class="how" data-act="export">Esporta backup</button><label class="how" style="cursor:pointer">Importa backup<input type="file" id="imp" accept=".json,application/json" hidden></label></div><p class="muted" id="exp-msg" role="status"></p></section>`;
-  return `<div class="wrap"><h1 class="pt">Amici</h1><div class="fp">${acc}${fr}${bk}</div></div>`;
+  const st=strayProfiles();
+  const stray=st.length?`<section class="acc"><p class="eyebrow">Allenamenti da recuperare</p>${st.map(x=>`<p>${x.list.length} allenamenti nel vecchio profilo <b>${esc(x.name)}</b>.</p><button class="btn" data-act="adopt" data-pid="${esc(x.pid)}">Spostali nel mio account</button>`).join('')}<p class="muted" style="font-size:14px">Se sono di un'altra persona non spostarli: falli importare a lei dal backup, col suo account.</p></section>`:'';
+  return `<div class="wrap"><h1 class="pt">Amici</h1><div class="fp">${stray}${acc}${fr}${bk}</div></div>`;
 }
 async function viewFriend(uid,name){
   if(!fdb)return;
@@ -1023,6 +1033,9 @@ const ACT={
     catch(x){m.textContent=x&&x.code==='permission-denied'?'Il database non è ancora configurato: mancano le regole di sicurezza.':'Non riuscito: serve la connessione.'}},
   async unshare(t){try{await fdb.collection('shares').doc(me.uid+'_'+t.dataset.email).delete();loadShares()}catch(e){alert('Non riuscito: serve la connessione.')}},
   'view-friend'(t){viewFriend(t.dataset.uid,t.dataset.name)},
+  adopt(t){const x=strayProfiles().find(y=>y.pid===t.dataset.pid);if(!x)return;
+    for(const s of x.list){const c=clone(s);c._pending=true;sessions.push(c);pushSession(c)}
+    saveSessions();render();},
   'imp-pick'(t){doImport(sheet.imp[+t.dataset.i])},
   'friend-prof'(t){pickFriendProfile(t.dataset.id)},
   async export(){
