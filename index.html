@@ -203,6 +203,14 @@ details summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .seg-n{display:flex;overflow-x:auto}.seg-n button{flex:1 0 auto;padding:0 12px;white-space:nowrap}
 .pk-heat{position:sticky;top:-20px;z-index:2;display:flex;justify-content:center;margin:-4px -16px 4px;padding:6px 0 8px;background:var(--surface);border-bottom:1px solid var(--line)}
 .pk-heat .anat.sm{width:150px}
+.sec{font:800 34px/1 var(--display);text-transform:uppercase;margin:36px 0 12px}
+.tc{display:flex;flex-direction:column;gap:12px;padding:0 0 16px;border-radius:10px;background:var(--surface)}
+.tc>.pc{background:none}
+.tc>p,.tc>details,.tc>.btn{margin:0 14px}
+.tc>.btn{width:auto}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{padding:3px 10px;border-radius:12px;background:var(--bg);font-size:13px;font-weight:700}
+.tips{margin:6px 0 4px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px}
 .pcs{display:flex;flex-direction:column;gap:12px}
 .pc{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:center;padding:14px;border-radius:10px;background:var(--surface)}
 .pc.on{box-shadow:inset 0 0 0 2px var(--fg)}
@@ -344,6 +352,8 @@ const PLAN={
 };
 /* Come si fa: muscoli, esecuzione, errore tipico. Foto e video si aprono su Google Immagini e YouTube. */
 const GUIDE={
+ 'panca-piana-bil':{p:['pec'],x:['deltA','triceps'],m:"Petto, spalle anteriori, tricipiti",q:"barbell bench press",s:["Sdraiato con gli occhi sotto il bilanciere, piedi ben piantati a terra.","Scapole strette e basse, presa poco più larga delle spalle.","Scendi controllato fino a toccare il petto all'altezza dei capezzoli, gomiti a circa 45°.","Spingi in alto senza staccare i glutei dalla panca."],e:"Far rimbalzare il bilanciere sul petto o staccare i glutei."},
+ 'stacco':{p:['hams','glutes','lowback'],x:['quads','traps','lats','forearm'],m:"Femorali, glutei, lombari, tutta la schiena",q:"conventional deadlift",s:["Piedi alla larghezza delle anche, bilanciere sopra la metà del piede.","Prendi il bilanciere appena fuori dalle gambe: schiena dritta, petto in fuori, spalle sopra la barra.","Spingi il pavimento con le gambe e porta i fianchi avanti: il bilanciere sale attaccato alle gambe.","Scendi con lo stesso percorso: prima i fianchi indietro, poi le ginocchia."],e:"Curvare la schiena. Parti leggero e fatti guardare da qualcuno."},
  'frontali-cavo':{p:['deltA'],x:['pec','deltL'],m:"Deltoide anteriore",q:"cable front raise single arm",s:["Dai le spalle al cavo basso, maniglia in una mano: il cavo passa di fianco alla gamba.","Braccio teso davanti alla coscia, gomito appena piegato, busto fermo.","Alza il braccio davanti a te fino all'altezza delle spalle, tenendo il cavo sempre alla stessa altezza.","Scendi lento. Le ripetizioni si contano per braccio."],e:"Salire oltre le spalle o slanciare col busto."},
  'rear-cavo-alto':{p:['deltR'],x:['rhomb','traps'],m:"Deltoidi posteriori",q:"single arm rear delt cable fly high pulley",s:["Cavo in alto. Mettiti di fianco e prendi il cavo con la mano più lontana: il braccio parte incrociato davanti al corpo.","Gomito appena piegato e fisso, l'altra mano appoggiata alla macchina.","Apri il braccio in fuori e indietro con un arco, fino in linea con il corpo.","Torna lento. Le ripetizioni si contano per braccio."],e:"Ruotare il busto o tirare col trapezio: si muove solo la spalla."},
  'panca-incl-smith':{p:['pec'],x:['deltA','triceps'],m:"Petto alto, spalle anteriori, tricipiti",q:"incline smith machine bench press",s:["Panca a 30-45° sotto il multipower, la barra scende sulla parte alta del petto.","Presa poco più larga delle spalle, scapole strette.","Sblocca ruotando i polsi e scendi lento fino al petto.","Spingi in alto senza bloccare i gomiti."],e:"Panca messa male: la barra cade sul collo o sulla pancia."},
@@ -489,7 +499,7 @@ const ALTS={
 };
 /* Altre varianti per ogni esercizio. */
 const MORE_ALTS={
- 'panca-incl':[{id:'panca-incl-smith',name:'Panca inclinata al multipower',step:BAR}],
+ 'panca-incl':[{id:'panca-incl-smith',name:'Panca inclinata al multipower',step:BAR},{id:'panca-piana-bil',name:'Panca piana con bilanciere',step:BAR}],
  'croci':[{id:'croci-basso',name:'Croci ai cavi dal basso',step:BAR},{id:'croci-incl-man',name:'Croci su panca inclinata',step:DB}],
  'shoulder':[{id:'shoulder-smith',name:'Shoulder press al multipower',step:BAR}],
  'alzate':[{id:'alzate-sedute',name:'Alzate laterali da seduto',step:DB},{id:'frontali-cavo',name:'Alzate frontali al cavo',step:BAR,perArm:true}],
@@ -504,7 +514,7 @@ const MORE_ALTS={
  'pullover':[{id:'pullover-barra',name:'Pullover ai cavi con barra',step:BAR}],
  'legpress':[{id:'squat-smith',name:'Squat al multipower',step:BAR}],
  'legext':[{id:'bulgaro',name:'Squat bulgaro',step:DB,perLeg:true},{id:'legext-uni',name:'Leg extension a una gamba',step:BAR,perLeg:true}],
- 'rdl':[{id:'good-morning',name:'Good morning',step:BAR}],
+ 'rdl':[{id:'good-morning',name:'Good morning',step:BAR},{id:'stacco',name:'Stacco da terra',step:BAR}],
  'legcurl':[{id:'legcurl-piedi',name:'Leg curl in piedi',step:BAR,perLeg:true}],
  'calf':[{id:'calf-seduto',name:'Calf raise da seduto',step:BAR}],
  'hip-thrust':[{id:'glute-kick',name:'Glute kickback al cavo',step:BAR,perLeg:true}]
@@ -608,12 +618,46 @@ function editHeat(){
   const seg=p.days.length>1?`<div class="seg seg-n" role="radiogroup" aria-label="Cosa mostrare">${[['all','Tutta']].concat(p.days.map((d,i)=>[i,d.name||'Giorno '+(i+1)])).map(([k,l])=>`<button role="radio" aria-checked="${String(k)===String(f)}" data-act="ed-focus" data-i="${k}">${esc(l)}</button>`).join('')}</div>`:'';
   return `<section class="ed-heat"><p class="eyebrow">Muscoli allenati${f==='all'&&p.days.length>1?' · ogni giorno fatto una volta':''}</p>${seg}<div class="ed-hm">${heatMap(v)}<div class="anat-v"><span>Davanti</span><span>Dietro</span></div>${HEAT_KEY}</div>${heatList(v)}</section>`;
 }
+/* Schede consigliate: impostazioni classiche, da aggiungere e personalizzare. [esercizio, serie, rip min, rip max, recupero s] */
+const TEMPLATES=[
+ {id:'t-fb',name:'Full body A/B',tags:['Principianti','2-3 volte a settimana','45-60 min'],
+  goal:'Tutto il corpo in ogni allenamento. Ogni muscolo lavora 2-3 volte a settimana con pochi esercizi base: è il modo più veloce per imparare i movimenti e crescere all\'inizio.',
+  details:['Alterna A e B: per esempio lunedì A, mercoledì B, venerdì A, poi la settimana dopo si riparte da B.','Lascia almeno un giorno di riposo tra due allenamenti.','Quando chiudi tutte le serie al numero massimo di ripetizioni, aumenta il peso (l\'app te lo propone).','Ideale anche se hai poco tempo: 2 volte a settimana bastano per vedere progressi.'],
+  days:[{name:'Full body A',ex:[['squat',3,8,10,120],['panca-piana-man',3,8,10,90],['lat',3,8,10,90],['shoulder',2,8,10,90],['legcurl',2,10,12,60],['crunch-cavo',2,12,15,60]]},
+        {name:'Full body B',ex:[['legpress',3,10,12,120],['panca-incl',3,8,10,90],['rematore',3,8,10,90],['alzate',2,12,15,60],['rdl',3,8,10,120],['curl-alt',2,10,12,60],['pushdown',2,10,12,60]]}]},
+ {id:'t-ul',name:'Upper / Lower',tags:['Intermedio','4 volte a settimana','60 min'],
+  goal:'Parte alta e parte bassa del corpo in giorni separati, ognuna 2 volte a settimana. Più serie per muscolo della full body: ottima per la crescita muscolare dopo i primi mesi.',
+  details:['Settimana tipo: lunedì Upper, martedì Lower, giovedì Upper, venerdì Lower.','Circa 10-12 serie a settimana per i muscoli principali: guarda l\'omino.','I primi esercizi di ogni giorno sono i più pesanti (6-8 ripetizioni), quelli dopo più leggeri e con più ripetizioni.','Se un giorno salta, riprendi dal giorno successivo: l\'app ti propone sempre quello che tocca.'],
+  days:[{name:'Upper',ex:[['panca-incl',3,6,8,120],['lat',3,8,10,90],['shoulder',3,8,10,90],['rematore',3,8,10,90],['alzate',3,12,15,60],['curl-alt',2,10,12,60],['pushdown',2,10,12,60]]},
+        {name:'Lower',ex:[['squat',3,6,8,150],['rdl',3,8,10,120],['legpress',3,10,12,90],['legcurl',3,10,12,60],['legext',2,12,15,60],['calf',3,12,15,60],['crunch-cavo',3,12,15,60]]}]},
+ {id:'t-ppl',name:'Push / Pull / Legs',tags:['Intermedio-avanzato','3 o 6 volte a settimana','60-75 min'],
+  goal:'Divide gli esercizi per movimento: spinta (petto, spalle, tricipiti), tirata (schiena, bicipiti, spalle dietro) e gambe. Molto lavoro per ogni muscolo in ogni seduta.',
+  details:['Con 3 allenamenti a settimana fai ogni giorno una volta: va bene, ma ogni muscolo lavora solo una volta.','Con 6 allenamenti (Push, Pull, Legs, Push, Pull, Legs, riposo) ogni muscolo lavora 2 volte: è la versione più efficace, ma serve recuperare bene (sonno e alimentazione).','I muscoli che si allenano insieme si stancano insieme: nel giorno Push i tricipiti arrivano già stanchi, è normale usare pesi più bassi.'],
+  days:[{name:'Push',ex:[['panca-piana-bil',4,6,8,150],['panca-incl',3,8,10,90],['shoulder',3,8,10,90],['alzate',3,12,15,60],['pushdown',3,10,12,60],['estensioni',2,10,12,60]]},
+        {name:'Pull',ex:[['lat',3,8,10,90],['rematore-bil',3,6,8,120],['rematore',3,10,12,90],['reverse-fly',3,12,15,60],['curl-bil',3,8,10,60],['hammer',2,10,12,60]]},
+        {name:'Legs',ex:[['squat',4,6,8,150],['rdl',3,8,10,120],['legpress',3,10,12,90],['legcurl',3,10,12,60],['calf',4,12,15,60],['crunch-cavo',3,12,15,60]]}]},
+ {id:'t-5x5',name:'Forza 5×5',tags:['Forza','3 volte a settimana','45-60 min'],
+  goal:'Pochi esercizi fondamentali, pesanti, 5 serie da 5 ripetizioni. L\'obiettivo è diventare più forti: i muscoli crescono, ma meno che con le schede da 8-12 ripetizioni.',
+  details:['Alterna A e B, tre volte a settimana (es. lunedì, mercoledì, venerdì).','Recupero lungo: 3 minuti tra le serie, perché i pesi sono alti.','Quando chiudi tutte le 5×5, la volta dopo aggiungi 2,5 kg (sullo stacco anche 5 kg).','Conta la tecnica: parti leggero e, se puoi, fatti guardare da un istruttore sui primi allenamenti.','Lo stacco si fa per una sola serie da 5, perché affatica molto.'],
+  days:[{name:'Forza A',ex:[['squat',5,5,5,180],['panca-piana-bil',5,5,5,180],['rematore-bil',5,5,5,180]]},
+        {name:'Forza B',ex:[['squat',5,5,5,180],['military',5,5,5,180],['stacco',1,5,5,180]]}]}
+];
+function templateEdit(t){
+  return {id:'pl'+Date.now().toString(36),name:t.name,days:t.days.map(d=>({key:newKey(),name:d.name,ex:d.ex.map(([id,sets,min,max,rest])=>({id,name:EX[id]?EX[id].name:id,sets,min,max,rest}))})),isNew:true};
+}
+const tplEx=t=>t.days.flatMap(d=>d.ex.map(([id,sets])=>({id,sets})));
+function templatesHtml(){
+  return `<h2 class="sec">Schede consigliate</h2><p class="muted" style="font-size:14px;margin:-6px 0 12px">Le impostazioni più usate in palestra. Aggiungine una alle tue schede e cambiala come vuoi.</p><div class="pcs">${TEMPLATES.map(t=>`<article class="tc"><div class="pc"><div class="pc-map">${heatMap(stim(tplEx(t)),'xs')}</div><div class="pc-b"><h3>${esc(t.name)}</h3><div class="tags">${t.tags.map(x=>`<span>${esc(x)}</span>`).join('')}</div></div></div>
+    <p>${esc(t.goal)}</p>
+    <details><summary>Come funziona ed esercizi</summary><ul class="tips">${t.details.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${t.days.map(d=>`<p class="eyebrow group">${esc(d.name)}</p><ul class="plan">${d.ex.map(([id,s,mi,ma,r])=>`<li><span>${esc(EX[id]?EX[id].name:id)} <button class="q" data-act="guide" data-id="${id}" aria-label="Come si fa">?</button></span><span>${s}×${mi===ma?mi:mi+'-'+ma}</span></li>`).join('')}</ul>`).join('')}</details>
+    <button class="btn ghost" data-act="tpl-use" data-id="${t.id}">Aggiungi e personalizza</button></article>`).join('')}</div>`;
+}
 function viewPlans(){
   const a=activePlan().id;
   const cards=livePlans().map(p=>{const on=p.id===a,days=p.coach?[1,2].map(k=>PLAN[k].name):p.days.map(d=>d.name);
     return `<article class="pc ${on?'on':''}"><div class="pc-map">${heatMap(stim(planEx(p)),'xs')}</div><div class="pc-b"><h3>${esc(p.name)}</h3><p class="muted" style="font-size:14px">${p.coach?'Del coach · ':''}${days.length} ${days.length===1?'giorno':'giorni'}: ${esc(days.join(', '))}</p>
     <div class="pc-a">${on?'<span class="badge">In uso</span>':`<button class="how" data-act="plan-pick" data-id="${p.id}">Usa questa</button>`}${p.coach?'<button class="link" data-act="plan-copy">Copia e modifica</button>':`<button class="link" data-act="plan-edit" data-id="${p.id}">Modifica</button>`}</div></div></article>`}).join('');
-  return `<div class="wrap"><h1 class="pt">Schede</h1><div class="pcs">${cards}</div><button class="btn" data-act="plan-new" style="margin-top:16px">+ Crea una nuova scheda</button><p class="muted" style="font-size:14px;margin-top:12px">L'omino mostra quanto lavora ogni muscolo in una settimana con quella scheda. Gli esercizi sono gli stessi in tutte le schede: pesi e grafici continuano.</p></div>`;
+  return `<div class="wrap"><h1 class="pt">Schede</h1><div class="pcs">${cards}</div><button class="btn" data-act="plan-new" style="margin-top:16px">+ Crea una nuova scheda</button>${templatesHtml()}<p class="muted" style="font-size:14px;margin-top:12px">L'omino mostra quanto lavora ogni muscolo in una settimana con quella scheda. Gli esercizi sono gli stessi in tutte le schede: pesi e grafici continuano.</p></div>`;
 }
 function stepper(i,j,f,val,label){return `<div class="es"><span class="eyebrow">${label}</span><div class="stp sm"><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="-1" aria-label="Meno ${label}">−</button><output>${val}</output><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="1" aria-label="Più ${label}">+</button></div></div>`}
 function viewEditor(){
@@ -663,6 +707,7 @@ const PLAN_ACT={
   'plan-pick'(t){plans.active=t.dataset.id;savePlans();sheet=null;render()},
   'plan-new'(){startEdit(null)},
   'plan-copy'(){copyCoach()},
+  'tpl-use'(t){const x=TEMPLATES.find(y=>y.id===t.dataset.id);if(!x)return;editFocus='all';edit=templateEdit(x);view='editor';sheet=null;render();window.scrollTo(0,0)},
   'plan-edit'(t){const p=planById(t.dataset.id);if(p)startEdit(p)},
   'ed-cancel'(){edit=null;view='plans';render();window.scrollTo(0,0)},
   'ed-add-day'(){edit.days.push({key:newKey(),name:'Giorno '+'ABCDEFGHIJ'[edit.days.length%10],ex:[]});render()},
