@@ -26,18 +26,18 @@
 :root{
   --bg:#e8eaed;--surface:#f7f8f9;--fg:#14181d;--muted:#56606b;--line:#cbd0d6;--field:#ffffff;
   --red:#c8281f;--blue:#1b62c4;--yellow:#e3ad0c;--green:#1d8a4e;--white:#fdfdfd;--steel:#8d96a0;
-  --on-accent:#ffffff;--accent:var(--red);--anat-base:#dadee2;--anat-m:#b3bac2;--anat-s:#e8a29c;--heat1:#f0c2bd;--heat2:#e27a70;--scrim:rgba(20,24,29,.5);
+  --on-accent:#ffffff;--accent:var(--red);--anat-base:#dadee2;--anat-m:#b3bac2;--anat-s:#e8a29c;--heat1:#f0c2bd;--heat2:#e27a70;--v1:#f7d9d5;--v2:#efb0a8;--v3:#e5837a;--v4:#d9564d;--scrim:rgba(20,24,29,.5);
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --body:"Atkinson Hyperlegible",-apple-system,"Helvetica Neue",Arial,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#101316;--surface:#1b1f24;--fg:#eff1f3;--muted:#9aa4af;--line:#30363e;--field:#0c0f12;
   --red:#d9382e;--blue:#2a72d6;--yellow:#e8b520;--green:#2b9c5e;--white:#e9ebee;--steel:#68727d;
-  --scrim:rgba(0,0,0,.65);--anat-base:#2c3238;--anat-m:#4b545e;--anat-s:#7d3a35;--heat1:#5c302d;--heat2:#9a3a32;color-scheme:dark}}
+  --scrim:rgba(0,0,0,.65);--anat-base:#2c3238;--anat-m:#4b545e;--anat-s:#7d3a35;--heat1:#5c302d;--heat2:#9a3a32;--v1:#43292a;--v2:#66302c;--v3:#883530;--v4:#ad3a32;color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101316;--surface:#1b1f24;--fg:#eff1f3;--muted:#9aa4af;--line:#30363e;--field:#0c0f12;
   --red:#d9382e;--blue:#2a72d6;--yellow:#e8b520;--green:#2b9c5e;--white:#e9ebee;--steel:#68727d;
-  --scrim:rgba(0,0,0,.65);--anat-base:#2c3238;--anat-m:#4b545e;--anat-s:#7d3a35;--heat1:#5c302d;--heat2:#9a3a32;color-scheme:dark}
+  --scrim:rgba(0,0,0,.65);--anat-base:#2c3238;--anat-m:#4b545e;--anat-s:#7d3a35;--heat1:#5c302d;--heat2:#9a3a32;--v1:#43292a;--v2:#66302c;--v3:#883530;--v4:#ad3a32;color-scheme:dark}
 [data-day="1"]{--accent:var(--red)}
 [data-day="2"]{--accent:var(--blue)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -188,6 +188,28 @@ details summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:10px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
 .seg button{min-height:42px;border:0;border-radius:8px;background:transparent;font-weight:700;color:var(--muted)}
 .seg button[aria-checked="true"]{background:var(--fg);color:var(--bg)}
+.anat path.v1{fill:var(--v1)}.anat path.v2{fill:var(--v2)}.anat path.v3{fill:var(--v3)}.anat path.v4{fill:var(--v4)}.anat path.v5{fill:var(--red)}
+.anat path.v1,.anat path.v2,.anat path.v3,.anat path.v4,.anat path.v5{stroke:var(--surface);stroke-width:.8}
+.anat path.v1,.anat path.v2,.anat path.v3,.anat path.v4,.anat path.v5,.anat path.m0{transition:fill .25s}
+.anat.sm{width:min(100%,190px)}.anat.xs{width:110px;margin:0}
+.anat .bb{transition:none}
+.heat-k{display:flex;align-items:center;gap:8px;max-width:260px;margin:4px auto 0;font-size:13px;color:var(--muted)}
+.heat-k i{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--v1),var(--v2),var(--v3),var(--v4),var(--red))}
+.hl-chips{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.hl-chips li{display:flex;gap:6px;align-items:center;padding:5px 10px 5px 8px;border-radius:14px;background:var(--bg);font-size:14px}
+.hl-chips li::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--red)}
+.hl-chips li.v1::before{background:var(--v1)}.hl-chips li.v2::before{background:var(--v2)}.hl-chips li.v3::before{background:var(--v3)}.hl-chips li.v4::before{background:var(--v4)}
+.ed-heat{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:10px;background:var(--surface)}
+.seg-n{display:flex;overflow-x:auto}.seg-n button{flex:1 0 auto;padding:0 12px;white-space:nowrap}
+.pk-heat{position:sticky;top:-20px;z-index:2;display:flex;justify-content:center;margin:-4px -16px 4px;padding:6px 0 8px;background:var(--surface);border-bottom:1px solid var(--line)}
+.pk-heat .anat.sm{width:150px}
+.pcs{display:flex;flex-direction:column;gap:12px}
+.pc{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:center;padding:14px;border-radius:10px;background:var(--surface)}
+.pc.on{box-shadow:inset 0 0 0 2px var(--fg)}
+.pc h3{font:800 26px/1 var(--display);text-transform:uppercase}
+.pc-b{display:flex;flex-direction:column;gap:8px;min-width:0}
+.pc-a{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.badge{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:18px;background:var(--fg);color:var(--bg);font-weight:700;font-size:14px}
 .anat path.h1{fill:var(--heat1)}.anat path.h2{fill:var(--heat2)}.anat path.h3{fill:var(--red)}
 .anat path.h1,.anat path.h2,.anat path.h3{stroke:var(--bg);stroke-width:.8}
 .vol .anat path{stroke:var(--bg)}
@@ -560,6 +582,7 @@ const newKey=()=>'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,
 /* --- Editor --- */
 let edit=null;
 function startEdit(p){
+  editFocus='all';
   edit=p?clone(p):{id:'pl'+Date.now().toString(36),name:'',days:[{key:newKey(),name:'Giorno A',ex:[]}],isNew:true};
   view='editor';sheet=null;render();window.scrollTo(0,0);
 }
@@ -568,6 +591,30 @@ function copyCoach(){
   edit=p;view='editor';sheet=null;render();window.scrollTo(0,0);
 }
 const REST_OPTS=[45,60,90,120,150,180];
+/* Omino a colori: quanto lavora ogni muscolo. Serie dell'esercizio = 1 per il muscolo principale, 1/2 per quelli che aiutano. */
+function stim(exs){const v={};for(const e of exs){const g=GUIDE[e.id];if(!g)continue;const n=e.sets||3;g.p.forEach(k=>v[k]=(v[k]||0)+n);g.x.forEach(k=>v[k]=(v[k]||0)+n/2)}return v}
+const heatCls=v=>k=>{const n=v[k]||0;return n<=0?'m0':n<=2?'v1':n<=4?'v2':n<=6?'v3':n<10?'v4':'v5'};
+const fmtS=n=>(Math.round(n*2)/2).toString().replace('.',',');
+function heatMap(v,cls){return bodyFig(heatCls(v)).replace('class="anat"','class="anat'+(cls?' '+cls:'')+'"')}
+const HEAT_KEY='<div class="heat-k"><span>Poco</span><i></i><span>Tanto</span></div>';
+function heatList(v){
+  const c=heatCls(v),on=MUSCLES.filter(([k])=>v[k]>0).sort((a,b)=>v[b[0]]-v[a[0]]),off=MUSCLES.filter(([k])=>!(v[k]>0));
+  return `${on.length?`<ul class="hl-chips">${on.map(([k,l])=>`<li class="${c(k)}"><span>${l}</span><b>${fmtS(v[k])}</b></li>`).join('')}</ul>`:'<p class="muted">Aggiungi esercizi: l\'omino si colora man mano.</p>'}${on.length&&off.length?`<p class="muted" style="font-size:14px">Non allenati: ${off.map(m=>m[1].toLowerCase()).join(', ')}.</p>`:''}`;
+}
+const planEx=p=>p.coach?[1,2].flatMap(k=>flat(k).filter(e=>!e.opt)):p.days.flatMap(d=>d.ex);
+let editFocus='all';
+function editHeat(){
+  const p=edit,f=editFocus==='all'||!p.days[editFocus]?'all':editFocus,exs=f==='all'?p.days.flatMap(d=>d.ex):p.days[f].ex,v=stim(exs);
+  const seg=p.days.length>1?`<div class="seg seg-n" role="radiogroup" aria-label="Cosa mostrare">${[['all','Tutta']].concat(p.days.map((d,i)=>[i,d.name||'Giorno '+(i+1)])).map(([k,l])=>`<button role="radio" aria-checked="${String(k)===String(f)}" data-act="ed-focus" data-i="${k}">${esc(l)}</button>`).join('')}</div>`:'';
+  return `<section class="ed-heat"><p class="eyebrow">Muscoli allenati${f==='all'&&p.days.length>1?' · ogni giorno fatto una volta':''}</p>${seg}<div class="ed-hm">${heatMap(v)}<div class="anat-v"><span>Davanti</span><span>Dietro</span></div>${HEAT_KEY}</div>${heatList(v)}</section>`;
+}
+function viewPlans(){
+  const a=activePlan().id;
+  const cards=livePlans().map(p=>{const on=p.id===a,days=p.coach?[1,2].map(k=>PLAN[k].name):p.days.map(d=>d.name);
+    return `<article class="pc ${on?'on':''}"><div class="pc-map">${heatMap(stim(planEx(p)),'xs')}</div><div class="pc-b"><h3>${esc(p.name)}</h3><p class="muted" style="font-size:14px">${p.coach?'Del coach · ':''}${days.length} ${days.length===1?'giorno':'giorni'}: ${esc(days.join(', '))}</p>
+    <div class="pc-a">${on?'<span class="badge">In uso</span>':`<button class="how" data-act="plan-pick" data-id="${p.id}">Usa questa</button>`}${p.coach?'<button class="link" data-act="plan-copy">Copia e modifica</button>':`<button class="link" data-act="plan-edit" data-id="${p.id}">Modifica</button>`}</div></div></article>`}).join('');
+  return `<div class="wrap"><h1 class="pt">Schede</h1><div class="pcs">${cards}</div><button class="btn" data-act="plan-new" style="margin-top:16px">+ Crea una nuova scheda</button><p class="muted" style="font-size:14px;margin-top:12px">L'omino mostra quanto lavora ogni muscolo in una settimana con quella scheda. Gli esercizi sono gli stessi in tutte le schede: pesi e grafici continuano.</p></div>`;
+}
 function stepper(i,j,f,val,label){return `<div class="es"><span class="eyebrow">${label}</span><div class="stp sm"><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="-1" aria-label="Meno ${label}">−</button><output>${val}</output><button data-act="ed-step" data-i="${i}" data-j="${j}" data-f="${f}" data-d="1" aria-label="Più ${label}">+</button></div></div>`}
 function viewEditor(){
   const p=edit;
@@ -577,6 +624,7 @@ function viewEditor(){
     <button class="how" data-act="ed-pick" data-i="${i}">+ Aggiungi esercizi</button></section>`).join('');
   return `<div class="wrap editor"><header class="wh-row ed-top"><button class="mini" data-act="ed-cancel">‹ Annulla</button><span class="wh-title" style="color:var(--fg)">${p.isNew?'Nuova scheda':'Modifica scheda'}</span><button class="mini end" data-act="ed-save">Salva</button></header>
   <label class="field"><span class="eyebrow">Nome della scheda</span><input class="tin" data-ed="pname" value="${esc(p.name||'')}" placeholder="Es. Scheda invernale"></label>
+  ${editHeat()}
   ${days}<button class="btn ghost" data-act="ed-add-day">+ Aggiungi un giorno</button>
   <p class="muted" id="ed-msg" role="status"></p>
   ${p.isNew?'':'<button class="link" data-act="ed-del-plan" style="color:var(--red)">Elimina questa scheda</button>'}</div>`;
@@ -596,6 +644,7 @@ function pickList(q){
 function pickHtml(){
   const d=edit.days[sheet.pick];
   return `<div class="sh pick" role="dialog" aria-modal="true" aria-label="Aggiungi esercizi"><p class="eyebrow">${esc(d.name||'Giorno')}</p><h2>Aggiungi esercizi</h2>
+  <div class="pk-heat" id="pk-heat">${heatMap(stim(d.ex),'sm')}</div>
   <div class="cust"><input id="pk-q" type="search" placeholder="Cerca o scrivi un nome nuovo" autocomplete="off" aria-label="Cerca esercizio"><button class="mini end" data-act="ed-add-new">Nuovo</button></div>
   <div class="opts" id="pk-list">${pickList('')}</div>
   <button class="btn" data-act="sheet-close">Fatto · ${d.ex.length} esercizi</button></div>`;
@@ -609,12 +658,13 @@ function plansHtml(){
   <button class="btn ghost" data-act="sheet-close">Chiudi</button></div>`;
 }
 const PLAN_ACT={
-  'plans-open'(){sheet={plans:true};renderSheet()},
+  'plans-open'(){sheet=null;view='plans';render();window.scrollTo(0,0)},
+  'ed-focus'(t){editFocus=t.dataset.i==='all'?'all':+t.dataset.i;render()},
   'plan-pick'(t){plans.active=t.dataset.id;savePlans();sheet=null;render()},
   'plan-new'(){startEdit(null)},
   'plan-copy'(){copyCoach()},
   'plan-edit'(t){const p=planById(t.dataset.id);if(p)startEdit(p)},
-  'ed-cancel'(){edit=null;view='home';render();window.scrollTo(0,0)},
+  'ed-cancel'(){edit=null;view='plans';render();window.scrollTo(0,0)},
   'ed-add-day'(){edit.days.push({key:newKey(),name:'Giorno '+'ABCDEFGHIJ'[edit.days.length%10],ex:[]});render()},
   'ed-del-day'(t){const i=+t.dataset.i;if(edit.days[i].ex.length&&!confirm('Eliminare «'+(edit.days[i].name||'questo giorno')+'» e i suoi esercizi?'))return;edit.days.splice(i,1);render()},
   'ed-del-ex'(t){edit.days[+t.dataset.i].ex.splice(+t.dataset.j,1);render()},
@@ -640,11 +690,11 @@ const PLAN_ACT={
     if(i>=0){const old=plans.list[i];const keep=old.days.filter(d=>!p.days.some(n=>n.key===d.key));p.archived=(old.archived||[]).concat(keep)} /* giorni tolti: restano per lo storico */
     if(i>=0)plans.list[i]=p;else plans.list.push(p);
     if(wasNew)plans.active=p.id;
-    savePlans();edit=null;view='home';render();window.scrollTo(0,0)},
+    savePlans();edit=null;view='plans';render();window.scrollTo(0,0)},
   'ed-del-plan'(){if(!confirm('Eliminare la scheda «'+(edit.name||'')+'»? Gli allenamenti già fatti restano nello storico.'))return;
-    const p=plans.list.find(x=>x.id===edit.id);if(p)p.deleted=true;if(plans.active===edit.id)plans.active='coach';savePlans();edit=null;view='home';render();window.scrollTo(0,0)}
+    const p=plans.list.find(x=>x.id===edit.id);if(p)p.deleted=true;if(plans.active===edit.id)plans.active='coach';savePlans();edit=null;view='plans';render();window.scrollTo(0,0)}
 };
-function refreshPick(){const l=document.getElementById('pk-list'),q=document.getElementById('pk-q');if(l)l.innerHTML=pickList(q?q.value:'');const b=sheetEl.querySelector('.pick>.btn');if(b)b.textContent='Fatto · '+edit.days[sheet.pick].ex.length+' esercizi'}
+function refreshPick(){const h=document.getElementById('pk-heat');if(h&&edit)h.innerHTML=heatMap(stim(edit.days[sheet.pick].ex),'sm');const l=document.getElementById('pk-list'),q=document.getElementById('pk-q');if(l)l.innerHTML=pickList(q?q.value:'');const b=sheetEl.querySelector('.pick>.btn');if(b)b.textContent='Fatto · '+edit.days[sheet.pick].ex.length+' esercizi'}
 rebuildPlan();
 
 let sound=ls.get('sg.sound',true);
@@ -890,6 +940,7 @@ const platesHtml=n=>Array.from({length:n},(_,i)=>`<i class="plate p${i%8}"></i>`
 const barHtml=n=>`<div class="bar" role="img" aria-label="${n} esercizi completati"><div class="side l">${platesHtml(n)}</div><div class="side r">${platesHtml(n)}</div><span class="collar"></span></div>`;
 const ICON={
  train:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12h20M6 7v10M9 5v14M15 5v14M18 7v10"/></svg>',
+ plans:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
  friends:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.300-5.500 6.500-5.500s5.700 2 6.500 5.500"/><circle cx="17" cy="9" r="2.800"/><path d="M16.500 14.600c2.600.2 4.300 2 5 5"/></svg>',
  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
@@ -1042,7 +1093,7 @@ function renderSheet(){
 }
 function renderNav(){
   const on=view!=='workout'&&view!=='summary'&&view!=='login'&&view!=='editor';navEl.hidden=!on;if(!on)return;
-  const it=viewing?[['exit','I miei dati',ICON.back],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog]]:[['home','Allena',ICON.train],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog],['friends','Amici',ICON.friends]];
+  const it=viewing?[['exit','I miei dati',ICON.back],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog]]:[['home','Allena',ICON.train],['plans','Schede',ICON.plans],['hist','Storico',ICON.hist],['prog','Progressi',ICON.prog],['friends','Amici',ICON.friends]];
   navEl.style.gridTemplateColumns='repeat('+it.length+',1fr)';
   navEl.innerHTML=it.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" ${view===k?'aria-current="page"':''}>${i}<span>${l}</span></button>`).join('');
 }
@@ -1050,7 +1101,7 @@ function render(){
   if(view==='workout'&&!active)view='home';
   if(viewing&&view!=='hist'&&view!=='prog')viewing=null;
   if(!viewing&&extraPlans.length){extraPlans=[];rebuildPlan()}
-  const v={home:viewHome,workout:viewWorkout,hist:viewHist,prog:viewProg,summary:viewSummary,friends:viewFriends,login:viewLogin,editor:viewEditor}[view]||viewHome;
+  const v={home:viewHome,workout:viewWorkout,hist:viewHist,prog:viewProg,summary:viewSummary,friends:viewFriends,login:viewLogin,editor:viewEditor,plans:viewPlans}[view]||viewHome;
   app.innerHTML=v();
   if(view==='prog')drawChart();
   renderNav();renderSheet();renderRest();
